@@ -1,16 +1,21 @@
-import { useState } from 'react';
+import { createContext, useState } from 'react';
 import { Navbar, Container, Nav, Row, Col, Spinner } from 'react-bootstrap';
 import './App.css';
 import data from './data';
 import { Routes, Route, useNavigate, Outlet } from 'react-router-dom';
 import Detail from './pages/Detail';
+import Cart from './pages/Cart';
 import axios from 'axios';
+
+export let Context1 = createContext(); // state 보관함
 
 function App() {
   let [dataNum, countUp] = useState(1);
   let [shoes, moreShoes] = useState(data);
   let [loading, setLoading] = useState(false);
   let navigate = useNavigate(); // 페이지 이동을 도와주는 함수
+
+  let [contxt] = useState('CONTEXT TEST');
 
   return (
     <div className="App">
@@ -20,6 +25,7 @@ function App() {
           <Nav className="me-auto">
             <Nav.Link onClick={() => { navigate('/') }}>Home</Nav.Link>
             <Nav.Link onClick={() => { navigate('/detail') }}>detail</Nav.Link>
+            <Nav.Link onClick={() => { navigate('/cart') }}>cart</Nav.Link>
           </Nav>
         </Container>
       </Navbar>
@@ -64,7 +70,12 @@ function App() {
             }
           </>
         } />
-        <Route path="/detail/:id" element={<Detail shoes={shoes} />} />
+        <Route path="/detail/:id" element={
+          <Context1.Provider value={{ contxt }}>
+            <Detail shoes={shoes} />
+          </Context1.Provider>
+        } />
+        <Route path="/cart" element={<Cart />} />
         <Route path="/about" element={<About />}>
           <Route path="member" element={<div>멤버임</div>} />
         </Route>

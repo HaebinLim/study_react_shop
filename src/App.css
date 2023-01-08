@@ -7,3 +7,12 @@
   border-bottom: 1px solid gray;
   background: url(../public/images/hello.png) 50% 50% no-repeat;
 }
+
+.start {
+  opacity: 0;
+}
+
+.end {
+  opacity: 1;
+  transition: opacity 0.5s;
+}
