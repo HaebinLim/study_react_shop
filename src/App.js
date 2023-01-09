@@ -1,12 +1,17 @@
-import { createContext, useState, useEffect } from 'react';
+import { lazy, Suspense, createContext, useState, useEffect } from 'react';
 import { Navbar, Container, Nav, Row, Col, Spinner } from 'react-bootstrap';
 import './App.css';
 import data from './data';
 import { Routes, Route, useNavigate, Outlet } from 'react-router-dom';
-import Detail from './pages/Detail';
-import Cart from './pages/Cart';
-import axios from 'axios';
 import { useQuery } from 'react-query';
+import axios from 'axios';
+
+// js 파일 쪼개기 (당장 필요없는 파일은 lazy로 처리. 단점 지연시간 발생할 수 있음 Suspense 사용)
+// import Detail from './pages/Detail';
+// import Cart from './pages/Cart';
+const Detail = lazy(() => import('./pages/Detail'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Input = lazy(() => import('./pages/Input'));
 
 export let Context1 = createContext(); // state 보관함
 
@@ -47,11 +52,12 @@ function App() {
     <div className="App">
       <Navbar bg="dark" variant="dark">
         <Container>
-          <Navbar.Brand href="#home">Navbar</Navbar.Brand>
+          <Navbar.Brand onClick={() => { navigate('/') }}>ShoesShop</Navbar.Brand>
           <Nav className="me-auto">
             <Nav.Link onClick={() => { navigate('/') }}>Home</Nav.Link>
             <Nav.Link onClick={() => { navigate('/detail/0') }}>detail</Nav.Link>
             <Nav.Link onClick={() => { navigate('/cart') }}>cart</Nav.Link>
+            <Nav.Link onClick={() => { navigate('/test') }}>성능저하</Nav.Link>
           </Nav>
           <div className="ms-auto text-white">
             {result.isLoading && '로딩중'}
@@ -60,62 +66,65 @@ function App() {
           </div>
         </Container>
       </Navbar>
-      <Routes>
-        <Route path="/" element={
-          <>
-            <div className="main-bg"></div>
-            <Row>
-              {loading ?
-                <Col><Spinner animation="border" /></Col>
-                :
-                <>
-                  {
-                    shoes.map((item, idx) => {
-                      return (
-                        <Product key={idx} item={item} idx={idx}></Product>
-                      )
+      <Suspense fallback={<div>로딩중!!!!!</div>}>
+        <Routes>
+          <Route path="/" element={
+            <>
+              <div className="main-bg"></div>
+              <Row>
+                {loading ?
+                  <Col><Spinner animation="border" /></Col>
+                  :
+                  <>
+                    {
+                      shoes.map((item, idx) => {
+                        return (
+                          <Product key={idx} item={item} idx={idx}></Product>
+                        )
+                      })
+                    }
+                  </>
+                }
+              </Row>
+              {dataNum >= 3 ? null :
+                <button onClick={() => {
+                  countUp(++dataNum);
+                  setLoading(true);
+                  axios.get('https://codingapple1.github.io/shop/data' + dataNum + '.json')
+                    .then((res) => {
+                      // let copy = [...shoes, ...res.data];
+                      let newList = [].concat(shoes, res.data);
+                      moreShoes(newList);
+                      setLoading(false);
+                    }).catch(() => {
+                      console.log('error');
                     })
-                  }
-                </>
+                  /*
+                  fetch('')
+                    .then(결과 => 결과.json()) JSON 변환 과정 필요
+                    .then(data => {})
+                  */
+                }}>더보기</button>
               }
-            </Row>
-            {dataNum >= 3 ? null :
-              <button onClick={() => {
-                countUp(++dataNum);
-                setLoading(true);
-                axios.get('https://codingapple1.github.io/shop/data' + dataNum + '.json')
-                  .then((res) => {
-                    // let copy = [...shoes, ...res.data];
-                    let newList = [].concat(shoes, res.data);
-                    moreShoes(newList);
-                    setLoading(false);
-                  }).catch(() => {
-                    console.log('error');
-                  })
-                /*
-                fetch('')
-                  .then(결과 => 결과.json()) JSON 변환 과정 필요
-                  .then(data => {})
-                */
-              }}>더보기</button>
-            }
-          </>
-        } />
-        <Route path="/detail/:id" element={
-          <Context1.Provider value={{ contxt }}>
-            <Detail shoes={shoes} />
-          </Context1.Provider>
-        } />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/about" element={<About />}>
-          <Route path="member" element={<div>멤버임</div>} />
-        </Route>
-        <Route path="/event" element={<div>오늘의 이벤트<Outlet></Outlet></div>}>
-          <Route path="one" element={<div>첫 주문시 양배추즙 서비스</div>} />
-          <Route path="two" element={<div>생일기념 쿠폰받기</div>} />
-        </Route>
-        <Route path="*" element={<div>없는 페이지요</div>} />
-      </Routes>
+            </>
+          } />
+          <Route path="/detail/:id" element={
+            <Context1.Provider value={{ contxt }}>
+              <Detail shoes={shoes} />
+            </Context1.Provider>
+          } />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/test" element={<Input />} />
+          <Route path="/about" element={<About />}>
+            <Route path="member" element={<div>멤버임</div>} />
+          </Route>
+          <Route path="/event" element={<div>오늘의 이벤트<Outlet></Outlet></div>}>
+            <Route path="one" element={<div>첫 주문시 양배추즙 서비스</div>} />
+            <Route path="two" element={<div>생일기념 쿠폰받기</div>} />
+          </Route>
+          <Route path="*" element={<div>없는 페이지요</div>} />
+        </Routes>
+      </Suspense>
     </div>
   );
 }
