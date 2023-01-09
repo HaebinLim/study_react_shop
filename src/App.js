@@ -1,4 +1,4 @@
-import { createContext, useState } from 'react';
+import { createContext, useState, useEffect } from 'react';
 import { Navbar, Container, Nav, Row, Col, Spinner } from 'react-bootstrap';
 import './App.css';
 import data from './data';
@@ -6,6 +6,7 @@ import { Routes, Route, useNavigate, Outlet } from 'react-router-dom';
 import Detail from './pages/Detail';
 import Cart from './pages/Cart';
 import axios from 'axios';
+import { useQuery } from 'react-query';
 
 export let Context1 = createContext(); // state 보관함
 
@@ -17,6 +18,31 @@ function App() {
 
   let [contxt] = useState('CONTEXT TEST');
 
+  let obj = { name: 'kim' }
+  localStorage.setItem('data1', obj); // [object Object] object 자료가 깨짐
+  localStorage.setItem('data2', JSON.stringify(obj)); //  json으로 변경해서 저장
+
+  let getObj = localStorage.getItem('data2');
+  console.log(JSON.parse(getObj).name); // json -> object 변환
+
+  useEffect(() => {
+    const savedId = localStorage.getItem('watched')
+    if (savedId === null) { // 이미 watched 항목이 있으면 setItem 하지 말아주세용
+      localStorage.setItem('watched', JSON.stringify([]))
+    }
+  }, [])
+
+  /* 
+    useQuery (실시간 데이터 다룰 때 사용)
+    성공/실패/로딩중 쉽게 파악 가능
+    */
+  let result = useQuery('userName', () => {
+    return axios.get('https://codingapple1.github.io/userdata.json').then((res) => {
+      console.log('요청됨');
+      return res.data;
+    })
+  });
+
   return (
     <div className="App">
       <Navbar bg="dark" variant="dark">
@@ -24,9 +50,14 @@ function App() {
           <Navbar.Brand href="#home">Navbar</Navbar.Brand>
           <Nav className="me-auto">
             <Nav.Link onClick={() => { navigate('/') }}>Home</Nav.Link>
-            <Nav.Link onClick={() => { navigate('/detail') }}>detail</Nav.Link>
+            <Nav.Link onClick={() => { navigate('/detail/0') }}>detail</Nav.Link>
             <Nav.Link onClick={() => { navigate('/cart') }}>cart</Nav.Link>
           </Nav>
+          <div className="ms-auto text-white">
+            {result.isLoading && '로딩중'}
+            {result.error && '에러남'}
+            {result.data && `반가워요 ${result.data.name}`}
+          </div>
         </Container>
       </Navbar>
       <Routes>
@@ -90,8 +121,9 @@ function App() {
 }
 
 function Product(props) {
+  let navigate = useNavigate();
   return (
-    <Col md={4}>
+    <Col md={4} onClick={() => { navigate('/detail/' + props.item.id) }}>
       <img src={process.env.PUBLIC_URL + '/images/shoes' + (props.idx + 1) + '.jpg'} width="80%" alt="" />
       <div>
         <strong>{props.item.title}</strong>

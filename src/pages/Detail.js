@@ -42,6 +42,15 @@ function Detail(props) {
     }
   }, [num])
 
+  useEffect(() => {
+    let getId = localStorage.getItem('watched');
+    getId = JSON.parse(getId);
+    getId.push(product.id);
+    getId = new Set(getId); // array set자료형 사용(중복을 허용하지 않음) array -> set -> array
+    getId = Array.from(getId);  // Array.from() array로 변환해주는 것
+    localStorage.setItem('watched', JSON.stringify(getId));
+  })
+
   /*
     useEffect(()=>{}) 1. 재렌더링마다 코드실행
     useEffect(()=>{},[]) 2. mount시 1회 코드실행
